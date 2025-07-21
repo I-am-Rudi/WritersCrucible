@@ -1,8 +1,8 @@
 {
   "name": "writers-crucible",
   "displayName": "Writer's Crucible",
-  "description": "Tracks daily non-fiction writing challenges based on character count with stats and per-project tracking.",
-  "version": "2.0.0",
+  "description": "Tracks daily non-fiction writing challenges with stats and per-project tracking.",
+  "version": "2.1.0",
   "publisher": "Gemini",
   "engines": {
     "vscode": "^1.80.0"
@@ -22,7 +22,11 @@
       },
       {
         "command": "writers-crucible.showStats",
-        "title": "Writer's Crucible: Show Project Statistics"
+        "title": "Writer's Crucible: Show Project Statistics (Text)"
+      },
+      {
+        "command": "writers-crucible.visualizeStats",
+        "title": "Writer's Crucible: Visualize Project Statistics"
       },
       {
         "command": "writers-crucible.addRevisionTime",
@@ -52,6 +56,8 @@
     }
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0"
+    "@types/vscode": "^1.80.0",
+    "chart.js": "^4.4.0"
   }
 }
+
