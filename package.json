@@ -2,7 +2,7 @@
   "name": "writers-crucible",
   "displayName": "Writer's Crucible",
   "description": "Tracks daily writing challenges with stats, visualizations, and goal notifications. Ignores pasted text.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "I-am-Rudi",
   "repository": {
   "type": "git",
@@ -61,6 +61,13 @@
             "latex"
           ],
           "description": "An array of language IDs for VS Code to track character counts in (e.g., 'markdown', 'latex', 'plaintext')."
+        },
+        "writers-crucible.undoGracePeriod": {
+          "type": "number",
+          "default": 30,
+          "description": "The time in seconds that a character addition remains temporary. If deleted within this period, it won't be counted toward your daily goal.",
+          "minimum": 5,
+          "maximum": 300
         }
       }
     }

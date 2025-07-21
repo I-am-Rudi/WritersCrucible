@@ -9,6 +9,7 @@ const STATE_KEY = 'writersCrucibleState';
 let statusBarItem;
 let lastCharacterCount = 0;
 let webviewPanel = null;
+let commitTimer = null;
 
 // --- Core Activation ---
 
@@ -19,6 +20,21 @@ function activate(context) {
     registerCommands(context);
     registerEventListeners(context);
     updateAll(context);
+    
+    // Start the timer to commit pending characters periodically
+    commitTimer = setInterval(() => {
+        commitPendingChars(context);
+    }, 5000); // Run every 5 seconds
+    
+    // Clean up timer on deactivation
+    context.subscriptions.push({
+        dispose: () => {
+            if (commitTimer) {
+                clearInterval(commitTimer);
+                commitTimer = null;
+            }
+        }
+    });
 }
 
 function registerCommands(context) {
@@ -60,6 +76,7 @@ function loadState(context) {
         lastUpdateDate: new Date().toDateString(),
         challengeName: 'No Challenge Set',
         history: [],
+        pendingChars: [], // New: buffer for grace period characters
     };
     return savedState || defaultState;
 }
@@ -209,8 +226,8 @@ function updateAll(context) {
 }
 
 /**
- * *** UPDATED FOR PASTE DETECTION ***
- * Handles character count changes when the user types or pastes.
+ * *** UPDATED FOR PASTE DETECTION & GRACE PERIOD ***
+ * Handles character count changes when the user types, pastes, or deletes.
  * @param {vscode.TextDocumentChangeEvent} event The full event object from the listener.
  * @param {vscode.ExtensionContext} context
  */
@@ -218,20 +235,56 @@ function handleTextChange(event, context) {
     const doc = event.document;
     // Any single text change adding more than this many characters is considered a paste.
     const PASTE_THRESHOLD = 20;
+    
+    let state = loadState(context);
+    const gracePeriod = vscode.workspace.getConfiguration('writers-crucible').get('undoGracePeriod', 30) * 1000; // Convert to ms
 
     let typedCharCount = 0;
     let wasPasteDetected = false;
 
     // Analyze all the changes that happened in this event
     for (const change of event.contentChanges) {
-        // We only count pure additions of new text.
-        if (change.rangeLength === 0 && change.text.length > 0) {
+        if (change.text.length > 0 && change.rangeLength === 0) {
+            // --- This is an ADDITION ---
             if (change.text.length < PASTE_THRESHOLD) {
                 // This change is small enough to be considered typing.
+                // Add to pending buffer instead of directly to dailyCount
+                if (!state.pendingChars) {
+                    state.pendingChars = [];
+                }
+                state.pendingChars.push({
+                    count: change.text.length,
+                    timestamp: Date.now()
+                });
                 typedCharCount += change.text.length;
             } else {
                 // This change is large and considered a paste.
                 wasPasteDetected = true;
+            }
+        } else if (change.text.length === 0 && change.rangeLength > 0) {
+            // --- This is a DELETION ---
+            let charsToDelete = change.rangeLength;
+            
+            if (!state.pendingChars) {
+                state.pendingChars = [];
+            }
+            
+            // Go through the buffer from newest to oldest and remove recent additions
+            while (charsToDelete > 0 && state.pendingChars.length > 0) {
+                let lastAddition = state.pendingChars[state.pendingChars.length - 1];
+                
+                if (Date.now() - lastAddition.timestamp < gracePeriod) {
+                    if (lastAddition.count > charsToDelete) {
+                        lastAddition.count -= charsToDelete;
+                        charsToDelete = 0;
+                    } else {
+                        charsToDelete -= lastAddition.count;
+                        state.pendingChars.pop(); // Remove the entry entirely
+                    }
+                } else {
+                    // Stop if we reach an entry that is too old to be undone
+                    break;
+                }
             }
         }
     }
@@ -241,14 +294,18 @@ function handleTextChange(event, context) {
         vscode.window.setStatusBarMessage('Pasted content not counted.', 3000);
     }
 
-    // If any actual typing was detected, update the daily count.
-    if (typedCharCount > 0) {
-        updateDailyCount(typedCharCount, context);
-    }
+    // Save state and update UI
+    saveState(context, state);
+    updateStatusBar(state);
     
     // The overall character count needs to be updated regardless,
     // so that subsequent deletions are calculated from the correct total.
     lastCharacterCount = getCharacterCount(doc);
+    
+    // Update webview if it's open
+    if (webviewPanel) {
+        webviewPanel.webview.html = getWebviewContent(state);
+    }
 }
 
 
@@ -294,18 +351,23 @@ function updateDailyCount(amount, context) {
 
 
 function updateStatusBar(state) {
+    // Calculate display count including both committed and pending characters
+    const pendingTotal = (state.pendingChars || []).reduce((sum, entry) => sum + entry.count, 0);
+    const displayCount = (state.dailyCount || 0) + pendingTotal;
+    
     if (!state.goal || state.goal === 0) {
         statusBarItem.text = `$(book) Writer's Crucible`;
         statusBarItem.tooltip = 'No writing challenge is active for this project. Click to start one.';
         statusBarItem.command = 'writers-crucible.startChallenge';
         statusBarItem.backgroundColor = undefined;
     } else {
-        const { dailyCount, goal } = state;
-        const percentage = goal > 0 ? Math.min(Math.floor((dailyCount / goal) * 100), 100) : 0;
-        statusBarItem.text = `$(pencil) ${dailyCount.toLocaleString()} / ${goal.toLocaleString()} (${percentage}%)`;
-        statusBarItem.tooltip = `Project: ${vscode.workspace.name || 'Global'}\nClick to see text stats.`;
+        const { goal } = state;
+        const percentage = goal > 0 ? Math.min(Math.floor((displayCount / goal) * 100), 100) : 0;
+        const pendingNote = pendingTotal > 0 ? ` (${pendingTotal} pending)` : '';
+        statusBarItem.text = `$(pencil) ${displayCount.toLocaleString()} / ${goal.toLocaleString()} (${percentage}%)`;
+        statusBarItem.tooltip = `Project: ${vscode.workspace.name || 'Global'}\nCommitted: ${(state.dailyCount || 0).toLocaleString()}${pendingNote}\nClick to see text stats.`;
         statusBarItem.command = 'writers-crucible.showStats';
-        statusBarItem.backgroundColor = dailyCount >= goal ? new vscode.ThemeColor('statusBarItem.prominentBackground') : undefined;
+        statusBarItem.backgroundColor = displayCount >= goal ? new vscode.ThemeColor('statusBarItem.prominentBackground') : undefined;
     }
     statusBarItem.show();
 }
@@ -342,6 +404,50 @@ function calculateStatistics(state) {
     }
     const historyLog = [...tempHistory].reverse().map(day => `- **${day.date}:** ${day.count.toLocaleString()} characters`).join('\n');
     return { totalChars, totalDays, streak: longestStreak, avgPerDay, historyLog };
+}
+
+// --- Grace Period Management ---
+
+function commitPendingChars(context) {
+    let state = loadState(context);
+    if (!state.pendingChars || state.pendingChars.length === 0) {
+        return; // Nothing to do
+    }
+
+    const gracePeriod = vscode.workspace.getConfiguration('writers-crucible').get('undoGracePeriod', 30) * 1000; // Convert to ms
+    const now = Date.now();
+    let committedCount = 0;
+
+    // Find all entries older than the grace period
+    const stillPending = [];
+    for (const entry of state.pendingChars) {
+        if (now - entry.timestamp > gracePeriod) {
+            // This entry is "safe" to commit
+            committedCount += entry.count;
+        } else {
+            // This entry is still within the grace period
+            stillPending.push(entry);
+        }
+    }
+
+    if (committedCount > 0) {
+        const oldCount = state.dailyCount || 0;
+        state.dailyCount = (state.dailyCount || 0) + committedCount;
+        state.pendingChars = stillPending;
+        
+        // Check if we just reached the goal
+        if (state.goal > 0 && oldCount < state.goal && state.dailyCount >= state.goal) {
+            vscode.window.showInformationMessage(`🎉 Goal Complete! You've written ${state.dailyCount.toLocaleString()} characters today. Well done!`);
+        }
+        
+        saveState(context, state);
+        updateStatusBar(state); // Update the UI with the new committed count
+        
+        // Update webview if it's open
+        if (webviewPanel) {
+            webviewPanel.webview.html = getWebviewContent(state);
+        }
+    }
 }
 
 // --- Webview and Charting ---
@@ -463,6 +569,10 @@ function getWebviewContent(state) {
 function deactivate() {
     if (statusBarItem) statusBarItem.dispose();
     if (webviewPanel) webviewPanel.dispose();
+    if (commitTimer) {
+        clearInterval(commitTimer);
+        commitTimer = null;
+    }
 }
 
 module.exports = { activate, deactivate };
