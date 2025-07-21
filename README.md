@@ -64,6 +64,19 @@ Each challenge level is designed for a specific workload and goal. Find the one 
     * Anyone whose primary job for a set period is to produce a large volume of text.
 * **Expected Monthly Output:** ~90,000+ characters (~13,500+ words). This is professional-level output that can produce a significant portion of a manuscript in a short time.
 
+#### non-fiction specific
+##### `writers-crucible.addRevisionTime`
+
+* **What it does:** When you run this command, it instantly adds **1,000 characters** to your daily goal.
+* **Why it exists:** Heavy revision and deep editing are mentally taxing and crucial for a high-quality manuscript. You might spend 45 minutes intensely rewriting a single paragraph, resulting in a *net loss* of characters but a massive *gain* in quality. This command provides a way to get "credit" for that focused editing work, ensuring you can still meet your daily goal even on days dedicated to revision rather than drafting.
+
+##### `writers-crucible.addCitation`
+
+* **What it does:** This command adds **50 characters** to your daily goal each time you run it.
+* **Why it exists:** Creating and formatting citations, references, and bibliographies is a time-consuming but necessary part of non-fiction and academic writing. This work produces very few characters relative to the effort involved. This command allows you to acknowledge the effort of accurately citing a source, ensuring that this critical but low-character task contributes to your daily progress.
+
+
+
 ---
 
 ## Features
