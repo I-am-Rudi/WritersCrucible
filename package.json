@@ -1,8 +1,8 @@
 {
   "name": "writers-crucible",
   "displayName": "Writer's Crucible",
-  "description": "Tracks daily non-fiction writing challenges with stats and per-project tracking.",
-  "version": "2.1.0",
+  "description": "Tracks daily writing challenges with stats, visualizations, and goal notifications. Ignores pasted text.",
+  "version": "2.4.0",
   "publisher": "Gemini",
   "engines": {
     "vscode": "^1.80.0"
@@ -29,6 +29,10 @@
         "title": "Writer's Crucible: Visualize Project Statistics"
       },
       {
+        "command": "writers-crucible.resetTodaysCount",
+        "title": "Writer's Crucible: Reset Today's Count"
+      },
+      {
         "command": "writers-crucible.addRevisionTime",
         "title": "Writer's Crucible: Add 30 Mins of Heavy Revision"
       },
@@ -38,7 +42,7 @@
       },
       {
         "command": "writers-crucible.resetChallenge",
-        "title": "Writer's Crucible: Reset Project Challenge Data"
+        "title": "Writer's Crucible: Reset All Project Data"
       }
     ],
     "configuration": {
@@ -48,7 +52,8 @@
           "type": "array",
           "default": [
             "markdown",
-            "plaintext"
+            "plaintext",
+            "latex"
           ],
           "description": "An array of language IDs for VS Code to track character counts in (e.g., 'markdown', 'latex', 'plaintext')."
         }

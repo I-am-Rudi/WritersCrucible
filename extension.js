@@ -1,6 +1,6 @@
-// extension.js v2.1.0
+// extension.js v2.4.0
 // Main logic file for the Writer's Crucible extension.
-// Now with graphical statistics visualization.
+// Now with paste detection to ignore non-typed content.
 
 const vscode = require('vscode');
 
@@ -13,7 +13,7 @@ let webviewPanel = null;
 // --- Core Activation ---
 
 function activate(context) {
-    console.log('Writer\'s Crucible v2.1 is now active!');
+    console.log('Writer\'s Crucible v2.4 is now active!');
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     context.subscriptions.push(statusBarItem);
     registerCommands(context);
@@ -25,6 +25,7 @@ function registerCommands(context) {
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.startChallenge', () => startChallengeCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.showStats', () => showStatsCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.visualizeStats', () => visualizeStatsCommand(context)));
+    context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.resetTodaysCount', () => resetTodaysCountCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.addRevisionTime', () => addRevisionTimeCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.addCitation', () => addCitationCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.resetChallenge', () => resetChallenge(context)));
@@ -32,9 +33,10 @@ function registerCommands(context) {
 
 function registerEventListeners(context) {
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => updateAll(context)));
+    // The text document change listener now passes the full event object
     context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
         if (vscode.window.activeTextEditor && event.document === vscode.window.activeTextEditor.document) {
-            handleTextChange(event.document, context);
+            handleTextChange(event, context);
         }
     }));
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => updateAll(context)));
@@ -137,6 +139,26 @@ function visualizeStatsCommand(context) {
     }
 }
 
+async function resetTodaysCountCommand(context) {
+    const confirm = await vscode.window.showWarningMessage(
+        "Are you sure you want to reset today's character count to zero? This cannot be undone.",
+        { modal: true },
+        'Yes, Reset Today'
+    );
+
+    if (confirm === 'Yes, Reset Today') {
+        let state = loadState(context);
+        state.dailyCount = 0;
+        saveState(context, state);
+        if (vscode.window.activeTextEditor) {
+            lastCharacterCount = getCharacterCount(vscode.window.activeTextEditor.document);
+        }
+        updateStatusBar(state);
+        vscode.window.showInformationMessage("Today's character count has been reset.");
+    }
+}
+
+
 async function addRevisionTimeCommand(context) {
     let state = loadState(context);
     if (state.goal !== 3000) {
@@ -164,8 +186,8 @@ async function addCitationCommand(context) {
 }
 
 async function resetChallenge(context) {
-    const confirm = await vscode.window.showWarningMessage('Are you sure you want to reset all challenge data for this project?', { modal: true }, 'Yes, Reset');
-    if (confirm === 'Yes, Reset') {
+    const confirm = await vscode.window.showWarningMessage('Are you sure you want to reset all challenge data for this project?', { modal: true }, 'Yes, Reset All');
+    if (confirm === 'Yes, Reset All') {
         saveState(context, undefined);
         lastCharacterCount = 0;
         updateAll(context);
@@ -186,14 +208,49 @@ function updateAll(context) {
     }
 }
 
-function handleTextChange(doc, context) {
-    const newCharacterCount = getCharacterCount(doc);
-    const diff = newCharacterCount - lastCharacterCount;
-    if (diff > 0) {
-        updateDailyCount(diff, context);
+/**
+ * *** UPDATED FOR PASTE DETECTION ***
+ * Handles character count changes when the user types or pastes.
+ * @param {vscode.TextDocumentChangeEvent} event The full event object from the listener.
+ * @param {vscode.ExtensionContext} context
+ */
+function handleTextChange(event, context) {
+    const doc = event.document;
+    // Any single text change adding more than this many characters is considered a paste.
+    const PASTE_THRESHOLD = 20;
+
+    let typedCharCount = 0;
+    let wasPasteDetected = false;
+
+    // Analyze all the changes that happened in this event
+    for (const change of event.contentChanges) {
+        // We only count pure additions of new text.
+        if (change.rangeLength === 0 && change.text.length > 0) {
+            if (change.text.length < PASTE_THRESHOLD) {
+                // This change is small enough to be considered typing.
+                typedCharCount += change.text.length;
+            } else {
+                // This change is large and considered a paste.
+                wasPasteDetected = true;
+            }
+        }
     }
-    lastCharacterCount = newCharacterCount;
+
+    // If we detected a paste, show a subtle message in the status bar.
+    if (wasPasteDetected) {
+        vscode.window.setStatusBarMessage('Pasted content not counted.', 3000);
+    }
+
+    // If any actual typing was detected, update the daily count.
+    if (typedCharCount > 0) {
+        updateDailyCount(typedCharCount, context);
+    }
+    
+    // The overall character count needs to be updated regardless,
+    // so that subsequent deletions are calculated from the correct total.
+    lastCharacterCount = getCharacterCount(doc);
 }
+
 
 function checkDateAndReset(state, context) {
     const today = new Date().toDateString();
@@ -219,14 +276,22 @@ function checkDateAndReset(state, context) {
 
 function updateDailyCount(amount, context) {
     let state = loadState(context);
+    const oldCount = state.dailyCount || 0;
     state = checkDateAndReset(state, context);
     state.dailyCount = (state.dailyCount || 0) + amount;
+
+    if (state.goal > 0 && oldCount < state.goal && state.dailyCount >= state.goal) {
+        vscode.window.showInformationMessage(`🎉 Goal Complete! You've written ${state.dailyCount.toLocaleString()} characters today. Well done!`);
+    }
+
     saveState(context, state);
     updateStatusBar(state);
+
     if (webviewPanel) {
         webviewPanel.webview.html = getWebviewContent(state);
     }
 }
+
 
 function updateStatusBar(state) {
     if (!state.goal || state.goal === 0) {
@@ -289,7 +354,6 @@ function getWebviewContent(state) {
     }
     tempHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // Prepare data for charts
     const last30Days = tempHistory.slice(-30);
     const labels = last30Days.map(d => d.date);
     const data = last30Days.map(d => d.count);
@@ -310,6 +374,7 @@ function getWebviewContent(state) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Writer's Crucible Stats</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -390,10 +455,6 @@ function getWebviewContent(state) {
                     }
                 }
             });
-            // We need to also import the time adapter for Chart.js
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js';
-            document.head.appendChild(script);
         </script>
     </body>
     </html>`;

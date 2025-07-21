@@ -6,6 +6,8 @@ This extension lives in your status bar, providing at-a-glance feedback on your 
 
 ## Main Features
 
+* **Smart Paste Detection:** The extension now automatically detects when text is pasted and ignores it, ensuring that only your typed characters count towards your daily goal.
+* **Reset Today's Count:** Added a command to reset only the current day's progress to zero, perfect for fixing copy-paste errors without affecting your history.
 * **Graphical Statistics:** A new command opens a dedicated panel to visualize your writing progress with beautiful charts, showing daily output and cumulative growth over time.
 * **Per-Project Tracking:** The extension automatically tracks your progress separately for each project folder (workspace).
 * **Configurable File Types:** You can tell the extension exactly which file types to track via your VS Code settings.
