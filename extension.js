@@ -191,8 +191,8 @@ async function addRevisionTimeCommand(context) {
 
 async function addCitationCommand(context) {
     let state = loadState(context);
-    if (state.goal !== 3000) {
-        vscode.window.showWarningMessage('This command is intended for the "3K Crucible" challenge.');
+    if (state.goal !== 3000 && state.goal !== 2000) {
+        vscode.window.showWarningMessage('This command is intended for the "Marathoner\'s Pace" (2,000) and "3K Crucible" (3,000) challenges.');
         return;
     }
     const confirm = await vscode.window.showQuickPick(['Yes', 'No'], { placeHolder: 'Add 50 characters for one formatted citation?' });
