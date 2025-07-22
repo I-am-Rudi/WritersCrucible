@@ -2,7 +2,7 @@
   "name": "writers-crucible",
   "displayName": "Writer's Crucible",
   "description": "Tracks daily writing challenges with stats, visualizations, and goal notifications. Ignores pasted text.",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "publisher": "I-am-Rudi",
   "repository": {
   "type": "git",
@@ -48,6 +48,14 @@
       {
         "command": "writers-crucible.resetChallenge",
         "title": "Writer's Crucible: Reset All Project Data"
+      },
+      {
+        "command": "writers-crucible.pauseTracking",
+        "title": "Writer's Crucible: Pause/Resume Character Tracking"
+      },
+      {
+        "command": "writers-crucible.correctCount",
+        "title": "Writer's Crucible: Correct Character Count"
       }
     ],
     "configuration": {

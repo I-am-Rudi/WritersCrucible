@@ -5,6 +5,27 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 
 ## [Unreleased]
 
+### Added
+- Pause/Resume tracking functionality - users can temporarily stop character counting
+- Character count correction command - allows manual adjustment by subtracting characters
+- Visual pause indicator in status bar with pause icon
+- Input validation for correction command
+- Custom challenge option - users can set their own daily character goals
+- Enhanced validation for custom goals (1-50,000 characters)
+
+### Changed
+- Status bar now shows pause state in both icon and tooltip
+- Tracking respects pause state - no character changes are recorded when paused
+- Correction command now shows current count and prevents over-subtraction
+- Improved validation messages for correction command
+- Citation command now works for any challenge with 2,000+ characters per day (including custom challenges)
+- Revision command now works for any challenge with 3,000+ characters per day (including custom challenges)
+
+### Improved
+- Better user feedback for custom challenge setup
+- More descriptive challenge names for custom goals
+- Bonus commands (citation/revision) now work dynamically based on goal thresholds rather than specific challenge names
+
 ## [Released]
 
 ### [1.0.2] - 2025-07-21

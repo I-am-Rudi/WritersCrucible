@@ -45,6 +45,8 @@ function registerCommands(context) {
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.addRevisionTime', () => addRevisionTimeCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.addCitation', () => addCitationCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.resetChallenge', () => resetChallenge(context)));
+    context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.pauseTracking', () => pauseTrackingCommand(context)));
+    context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.correctCount', () => correctCountCommand(context)));
 }
 
 function registerEventListeners(context) {
@@ -77,6 +79,7 @@ function loadState(context) {
         challengeName: 'No Challenge Set',
         history: [],
         pendingChars: [], // New: buffer for grace period characters
+        trackingPaused: false, // New: tracking pause state
     };
     return savedState || defaultState;
 }
@@ -93,18 +96,46 @@ async function startChallengeCommand(context) {
         { label: 'Micro-Sprint', description: '500 characters/day', target: 500 },
         { label: 'Standard Kilo-Challenge', description: '1,000 characters/day', target: 1000 },
         { label: 'Marathoner\'s Pace', description: '2,000 characters/day', target: 2000 },
-        { label: '3K Crucible', description: '3,000 characters/day', target: 3000 }
+        { label: '3K Crucible', description: '3,000 characters/day', target: 3000 },
+        { label: 'Custom Challenge', description: 'Set your own daily goal', target: 'custom' }
     ];
     const picked = await vscode.window.showQuickPick(challengeOptions, { placeHolder: 'Choose your daily writing challenge' });
     if (picked) {
         let state = loadState(context);
-        state.goal = picked.target;
-        state.challengeName = picked.label;
+        
+        if (picked.target === 'custom') {
+            const customGoal = await vscode.window.showInputBox({
+                prompt: 'Enter your daily character goal',
+                placeHolder: 'e.g., 1500',
+                validateInput: (value) => {
+                    const num = parseInt(value);
+                    if (isNaN(num) || num <= 0) {
+                        return 'Please enter a valid positive number';
+                    }
+                    if (num > 50000) {
+                        return 'Goal seems too high. Please enter a number under 50,000';
+                    }
+                    return null;
+                }
+            });
+            
+            if (customGoal === undefined) {
+                return; // User cancelled
+            }
+            
+            const goal = parseInt(customGoal);
+            state.goal = goal;
+            state.challengeName = `Custom Challenge (${goal.toLocaleString()} chars/day)`;
+        } else {
+            state.goal = picked.target;
+            state.challengeName = picked.label;
+        }
+        
         if (state.lastUpdateDate === new Date().toDateString()) {
             state.dailyCount = 0;
         }
         saveState(context, state);
-        vscode.window.showInformationMessage(`Challenge Started: ${picked.label}. Good luck!`);
+        vscode.window.showInformationMessage(`Challenge Started: ${state.challengeName}. Good luck!`);
         updateAll(context);
     }
 }
@@ -178,8 +209,8 @@ async function resetTodaysCountCommand(context) {
 
 async function addRevisionTimeCommand(context) {
     let state = loadState(context);
-    if (state.goal !== 3000) {
-        vscode.window.showWarningMessage('This command is intended for the "3K Crucible" challenge.');
+    if (state.goal < 3000) {
+        vscode.window.showWarningMessage('This command is available for challenges with 3,000+ characters per day.');
         return;
     }
     const confirm = await vscode.window.showQuickPick(['Yes', 'No'], { placeHolder: 'Add 1,000 characters for 30 mins of revision?' });
@@ -191,8 +222,8 @@ async function addRevisionTimeCommand(context) {
 
 async function addCitationCommand(context) {
     let state = loadState(context);
-    if (state.goal !== 3000 && state.goal !== 2000) {
-        vscode.window.showWarningMessage('This command is intended for the "Marathoner\'s Pace" (2,000) and "3K Crucible" (3,000) challenges.');
+    if (state.goal < 2000) {
+        vscode.window.showWarningMessage('This command is available for challenges with 2,000+ characters per day.');
         return;
     }
     const confirm = await vscode.window.showQuickPick(['Yes', 'No'], { placeHolder: 'Add 50 characters for one formatted citation?' });
@@ -209,6 +240,50 @@ async function resetChallenge(context) {
         lastCharacterCount = 0;
         updateAll(context);
         vscode.window.showInformationMessage('Writer\'s Crucible data for this project has been reset.');
+    }
+}
+
+async function pauseTrackingCommand(context) {
+    let state = loadState(context);
+    state.trackingPaused = !state.trackingPaused;
+    saveState(context, state);
+    
+    const status = state.trackingPaused ? 'paused' : 'resumed';
+    vscode.window.showInformationMessage(`Character tracking has been ${status}.`);
+    updateStatusBar(state);
+}
+
+async function correctCountCommand(context) {
+    let state = loadState(context);
+    const currentCount = state.dailyCount || 0;
+    
+    const input = await vscode.window.showInputBox({
+        prompt: `Enter the number of characters to subtract from today's count (Current: ${currentCount})`,
+        placeHolder: 'e.g., 100',
+        validateInput: (value) => {
+            const num = parseInt(value);
+            if (isNaN(num) || num <= 0) {
+                return 'Please enter a valid positive number to subtract';
+            }
+            if (num > currentCount) {
+                return `Cannot subtract more than current count (${currentCount})`;
+            }
+            return null;
+        }
+    });
+    
+    if (input !== undefined) {
+        const correction = parseInt(input);
+        const oldCount = state.dailyCount || 0;
+        state.dailyCount = oldCount - correction;
+        saveState(context, state);
+        
+        vscode.window.showInformationMessage(`Subtracted ${correction} characters. New count: ${state.dailyCount}`);
+        updateStatusBar(state);
+        
+        if (webviewPanel) {
+            webviewPanel.webview.html = getWebviewContent(state);
+        }
     }
 }
 
@@ -237,6 +312,13 @@ function handleTextChange(event, context) {
     const PASTE_THRESHOLD = 20;
     
     let state = loadState(context);
+    
+    // If tracking is paused, still update the character count for UI but don't track changes
+    if (state.trackingPaused) {
+        lastCharacterCount = getCharacterCount(doc);
+        return;
+    }
+    
     const gracePeriod = vscode.workspace.getConfiguration('writers-crucible').get('undoGracePeriod', 30) * 1000; // Convert to ms
 
     let typedCharCount = 0;
@@ -355,8 +437,10 @@ function updateStatusBar(state) {
     const pendingTotal = (state.pendingChars || []).reduce((sum, entry) => sum + entry.count, 0);
     const displayCount = (state.dailyCount || 0) + pendingTotal;
     
+    const pausedIndicator = state.trackingPaused ? ' $(debug-pause)' : '';
+    
     if (!state.goal || state.goal === 0) {
-        statusBarItem.text = `$(book) Writer's Crucible`;
+        statusBarItem.text = `$(book) Writer's Crucible${pausedIndicator}`;
         statusBarItem.tooltip = 'No writing challenge is active for this project. Click to start one.';
         statusBarItem.command = 'writers-crucible.startChallenge';
         statusBarItem.backgroundColor = undefined;
@@ -364,8 +448,9 @@ function updateStatusBar(state) {
         const { goal } = state;
         const percentage = goal > 0 ? Math.min(Math.floor((displayCount / goal) * 100), 100) : 0;
         const pendingNote = pendingTotal > 0 ? ` (${pendingTotal} pending)` : '';
-        statusBarItem.text = `$(pencil) ${displayCount.toLocaleString()} / ${goal.toLocaleString()} (${percentage}%)`;
-        statusBarItem.tooltip = `Project: ${vscode.workspace.name || 'Global'}\nCommitted: ${(state.dailyCount || 0).toLocaleString()}${pendingNote}\nClick to see text stats.`;
+        const pausedNote = state.trackingPaused ? ' - PAUSED' : '';
+        statusBarItem.text = `$(pencil) ${displayCount.toLocaleString()} / ${goal.toLocaleString()} (${percentage}%)${pausedIndicator}`;
+        statusBarItem.tooltip = `Project: ${vscode.workspace.name || 'Global'}\nCommitted: ${(state.dailyCount || 0).toLocaleString()}${pendingNote}${pausedNote}\nClick to see text stats.`;
         statusBarItem.command = 'writers-crucible.showStats';
         statusBarItem.backgroundColor = displayCount >= goal ? new vscode.ThemeColor('statusBarItem.prominentBackground') : undefined;
     }
