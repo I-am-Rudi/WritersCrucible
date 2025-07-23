@@ -76,6 +76,13 @@
           "description": "The time in seconds that a character addition remains temporary. If deleted within this period, it won't be counted toward your daily goal.",
           "minimum": 5,
           "maximum": 300
+        },
+        "writers-crucible.maxTrackedChars": {
+          "type": "number",
+          "default": 50,
+          "description": "The maximum number of characters to track per input operation. Prevents extremely large paste operations from inflating your daily count.",
+          "minimum": 1,
+          "maximum": 1000
         }
       }
     }

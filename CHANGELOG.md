@@ -11,6 +11,11 @@ All notable changes to the Writer's Crucible extension will be documented in thi
   - Dropdown completion tracking (completion menu items accepted with Tab/Enter)
   - Intelligent detection distinguishes between manual typing and AI assistance
   - Both completion types now count towards daily character goals
+- **Configurable Character Limit**: New `maxTrackedChars` setting
+  - Set maximum characters tracked per input operation (default: 50, range: 1-1000)
+  - Prevents large paste operations from inflating counts
+  - Allows customization based on writing style and AI usage preferences
+  - Accessible via VS Code settings under "Writer's Crucible"
 - Pause/Resume tracking functionality - users can temporarily stop character counting
 - Character count correction command - allows manual adjustment by subtracting characters
 - Visual pause indicator in status bar with pause icon
@@ -20,9 +25,10 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 
 ### Changed
 - **Universal Character Tracking**: Complete rewrite of input detection system
-  - Now tracks all text input methods up to 100 characters per operation
+  - Now tracks all text input methods with configurable limits per operation
   - Improved event handling for better reliability
   - Enhanced detection of inline completions vs. manual input
+  - Default character limit reduced from 100 to 50 for more conservative tracking
 - Status bar now shows pause state in both icon and tooltip
 - Tracking respects pause state - no character changes are recorded when paused
 - Correction command now shows current count and prevents over-subtraction
@@ -36,6 +42,7 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 - Bonus commands (citation/revision) now work dynamically based on goal thresholds rather than specific challenge names
 - Cleaner console output (removed debug logging)
 - More robust text change event handling
+- Enhanced configuration options with better descriptions and validation
 
 ## [Released]
 
@@ -80,3 +87,4 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 #### Configuration Options
 - `writers-crucible.trackedFileTypes`: Array of file types to track
 - `writers-crucible.undoGracePeriod`: Time window for undo protection (5-300 seconds)
+- `writers-crucible.maxTrackedChars`: Maximum characters tracked per input operation (1-1000, default: 50)

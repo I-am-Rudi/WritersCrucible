@@ -96,10 +96,12 @@ Each challenge level is designed for a specific workload and goal. Find the one 
 
 ## How to Use
 
-1.  **(First Time) Configure File Types (Optional):**
+1.  **(First Time) Configure Settings (Optional):**
     * Go to `File > Preferences > Settings` (or `Code > Settings > Settings` on Mac).
     * Search for "Writer's Crucible".
-    * In the "Tracked File Types" setting, add the language IDs you want to track (e.g., `latex`, `restructuredtext`). The defaults are `markdown` and `plaintext`.
+    * **Tracked File Types:** Add the language IDs you want to track (e.g., `latex`, `restructuredtext`). The defaults are `markdown` and `plaintext`.
+    * **Max Tracked Characters:** Set the maximum characters tracked per input operation (default: 50). This prevents large paste operations from inflating your count while allowing most Copilot completions to be tracked.
+    * **Undo Grace Period:** Adjust how long deletions can "undo" recent character additions (default: 30 seconds).
 
 2.  **Start a Challenge:**
     * Open a project folder.
@@ -108,7 +110,7 @@ Each challenge level is designed for a specific workload and goal. Find the one 
 
 3.  **Write!**
     * Open a file of a tracked type.
-    * As you type, you will see your character count increase in the status bar.
+    * As you type, use Copilot completions, or write manually, you will see your character count increase in the status bar.
 
 4.  **View Statistics:**
     * **For Visual Charts:** Run `Writer's Crucible: Visualize Project Statistics` from the Command Palette. A new tab will open with charts of your progress.

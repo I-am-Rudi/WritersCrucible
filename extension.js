@@ -1,6 +1,6 @@
 // extension.js v2.4.0
 // Main logic file for the Writer's Crucible extension.
-// Now tracks all character input up to 100 characters per input operation.
+// Now tracks all character input with configurable character limits per operation.
 
 const vscode = require('vscode');
 
@@ -332,15 +332,13 @@ function updateAll(context) {
 }
 
 /**
- * *** UPDATED FOR UNIVERSAL CHARACTER TRACKING WITH 100-CHAR LIMIT ***
+ * *** UPDATED FOR UNIVERSAL CHARACTER TRACKING WITH CONFIGURABLE LIMIT ***
  * Handles character count changes when the user types, pastes, or deletes.
  * @param {vscode.TextDocumentChangeEvent} event The full event object from the listener.
  * @param {vscode.ExtensionContext} context
  */
 function handleTextChange(event, context) {
     const doc = event.document;
-    // Track up to 100 characters per input, regardless of how it was entered
-    const MAX_TRACKED_CHARS = 100;
     
     let state = loadState(context);
     
@@ -350,7 +348,9 @@ function handleTextChange(event, context) {
         return;
     }
     
+    // Get configurable values
     const gracePeriod = vscode.workspace.getConfiguration('writers-crucible').get('undoGracePeriod', 30) * 1000; // Convert to ms
+    const maxTrackedChars = vscode.workspace.getConfiguration('writers-crucible').get('maxTrackedChars', 50);
 
     let trackedCharCount = 0;
 
@@ -358,8 +358,8 @@ function handleTextChange(event, context) {
     for (const change of event.contentChanges) {
         if (change.text.length > 0 && change.rangeLength === 0) {
             // --- This is an ADDITION ---
-            // Track up to MAX_TRACKED_CHARS characters from this input
-            const charsToTrack = Math.min(change.text.length, MAX_TRACKED_CHARS);
+            // Track up to maxTrackedChars characters from this input
+            const charsToTrack = Math.min(change.text.length, maxTrackedChars);
             
             if (!state.pendingChars) {
                 state.pendingChars = [];
@@ -399,7 +399,7 @@ function handleTextChange(event, context) {
             // For replacements, we track the net addition (if any)
             const netAddition = change.text.length - change.rangeLength;
             if (netAddition > 0) {
-                const charsToTrack = Math.min(netAddition, MAX_TRACKED_CHARS);
+                const charsToTrack = Math.min(netAddition, maxTrackedChars);
                 
                 if (!state.pendingChars) {
                     state.pendingChars = [];
