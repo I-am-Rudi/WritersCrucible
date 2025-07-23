@@ -6,6 +6,11 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 ## [Unreleased]
 
 ### Added
+- **GitHub Copilot Integration**: Full support for tracking AI-assisted writing
+  - Inline completion tracking (grayed-out suggestions accepted with Tab)
+  - Dropdown completion tracking (completion menu items accepted with Tab/Enter)
+  - Intelligent detection distinguishes between manual typing and AI assistance
+  - Both completion types now count towards daily character goals
 - Pause/Resume tracking functionality - users can temporarily stop character counting
 - Character count correction command - allows manual adjustment by subtracting characters
 - Visual pause indicator in status bar with pause icon
@@ -14,6 +19,10 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 - Enhanced validation for custom goals (1-50,000 characters)
 
 ### Changed
+- **Universal Character Tracking**: Complete rewrite of input detection system
+  - Now tracks all text input methods up to 100 characters per operation
+  - Improved event handling for better reliability
+  - Enhanced detection of inline completions vs. manual input
 - Status bar now shows pause state in both icon and tooltip
 - Tracking respects pause state - no character changes are recorded when paused
 - Correction command now shows current count and prevents over-subtraction
@@ -25,6 +34,8 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 - Better user feedback for custom challenge setup
 - More descriptive challenge names for custom goals
 - Bonus commands (citation/revision) now work dynamically based on goal thresholds rather than specific challenge names
+- Cleaner console output (removed debug logging)
+- More robust text change event handling
 
 ## [Released]
 

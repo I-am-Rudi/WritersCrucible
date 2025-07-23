@@ -6,12 +6,13 @@ This extension lives in your status bar, providing at-a-glance feedback on your 
 
 ## Main Features
 
-* **Smart Paste Detection:** The extension now automatically detects when text is pasted and ignores it, ensuring that only your typed characters count towards your daily goal.
+* **GitHub Copilot Integration:** The extension now tracks both inline and dropdown GitHub Copilot completions, ensuring all your AI-assisted writing counts towards your daily goal.
+* **Smart Paste Detection:** The extension automatically detects text pasted up
+  to 100 character, ensuring that your typed characters count higher towards your daily goal.
 * **Reset Today's Count:** Added a command to reset only the current day's progress to zero, perfect for fixing copy-paste errors without affecting your history.
 * **Graphical Statistics:** A new command opens a dedicated panel to visualize your writing progress with beautiful charts, showing daily output and cumulative growth over time.
 * **Per-Project Tracking:** The extension automatically tracks your progress separately for each project folder (workspace).
 * **Configurable File Types:** You can tell the extension exactly which file types to track via your VS Code settings.
-* **Graphical Statistics:** Pre-configured challenges. ---
 
 ## The Writer's Crucible Philosophy
 
@@ -83,7 +84,12 @@ Each challenge level is designed for a specific workload and goal. Find the one 
 
 * **Status Bar Progress:** Your daily character count and goal are always visible.
 * **Multiple Challenge Levels:** Choose the challenge that fits your schedule and goals.
-* **Automatic Character Tracking:** Automatically counts characters as you type in your configured file types.
+* **Universal Character Tracking:** Automatically counts characters from all input methods:
+  - Manual typing
+  - Copy/paste operations (ignored to prevent cheating)
+  - GitHub Copilot completions (both inline and dropdown)
+  - All other text insertions
+* **Intelligent Input Detection:** Distinguishes between different types of text input and applies appropriate tracking rules.
 * **Daily Reset:** Your progress automatically resets to zero each day, and the previous day's work is saved to your project's history.
 * **Crucible-Specific Commands:** For the "3K Crucible" challenge, add character bonuses for revision and citation work.
 * **Persistent, Scoped State:** Your challenge and progress are saved independently for each project.

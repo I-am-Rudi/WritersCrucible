@@ -1,6 +1,6 @@
 // extension.js v2.4.0
 // Main logic file for the Writer's Crucible extension.
-// Now with paste detection to ignore non-typed content.
+// Now tracks all character input up to 100 characters per input operation.
 
 const vscode = require('vscode');
 
@@ -15,6 +15,7 @@ let commitTimer = null;
 
 function activate(context) {
     console.log('Writer\'s Crucible v2.4 is now active!');
+    
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     context.subscriptions.push(statusBarItem);
     registerCommands(context);
@@ -51,12 +52,42 @@ function registerCommands(context) {
 
 function registerEventListeners(context) {
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => updateAll(context)));
+    
     // The text document change listener now passes the full event object
     context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
         if (vscode.window.activeTextEditor && event.document === vscode.window.activeTextEditor.document) {
             handleTextChange(event, context);
         }
     }));
+    
+    // Listen for inline completion acceptances
+    context.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(event => {
+        // Check if this might be an inline completion acceptance
+        if (event.kind === vscode.TextEditorSelectionChangeKind.Command) {
+            // Check if the document content changed recently without a corresponding text change event
+            const currentCharCount = getCharacterCount(event.textEditor.document);
+            if (currentCharCount !== lastCharacterCount) {
+                const charDifference = currentCharCount - lastCharacterCount;
+                
+                if (charDifference > 0) {
+                    // Simulate a text change event for the inline completion
+                    const simulatedEvent = {
+                        document: event.textEditor.document,
+                        contentChanges: [{
+                            text: ''.repeat(charDifference), // We don't have the actual text, but we know the length
+                            textLength: charDifference,
+                            rangeLength: 0,
+                            range: event.selections[0], // Use current selection as approximate range
+                        }],
+                        reason: 'inline-completion'
+                    };
+                    
+                    handleTextChange(simulatedEvent, context);
+                }
+            }
+        }
+    }));
+    
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => updateAll(context)));
 }
 
@@ -301,15 +332,15 @@ function updateAll(context) {
 }
 
 /**
- * *** UPDATED FOR PASTE DETECTION & GRACE PERIOD ***
+ * *** UPDATED FOR UNIVERSAL CHARACTER TRACKING WITH 100-CHAR LIMIT ***
  * Handles character count changes when the user types, pastes, or deletes.
  * @param {vscode.TextDocumentChangeEvent} event The full event object from the listener.
  * @param {vscode.ExtensionContext} context
  */
 function handleTextChange(event, context) {
     const doc = event.document;
-    // Any single text change adding more than this many characters is considered a paste.
-    const PASTE_THRESHOLD = 20;
+    // Track up to 100 characters per input, regardless of how it was entered
+    const MAX_TRACKED_CHARS = 100;
     
     let state = loadState(context);
     
@@ -321,28 +352,23 @@ function handleTextChange(event, context) {
     
     const gracePeriod = vscode.workspace.getConfiguration('writers-crucible').get('undoGracePeriod', 30) * 1000; // Convert to ms
 
-    let typedCharCount = 0;
-    let wasPasteDetected = false;
+    let trackedCharCount = 0;
 
     // Analyze all the changes that happened in this event
     for (const change of event.contentChanges) {
         if (change.text.length > 0 && change.rangeLength === 0) {
             // --- This is an ADDITION ---
-            if (change.text.length < PASTE_THRESHOLD) {
-                // This change is small enough to be considered typing.
-                // Add to pending buffer instead of directly to dailyCount
-                if (!state.pendingChars) {
-                    state.pendingChars = [];
-                }
-                state.pendingChars.push({
-                    count: change.text.length,
-                    timestamp: Date.now()
-                });
-                typedCharCount += change.text.length;
-            } else {
-                // This change is large and considered a paste.
-                wasPasteDetected = true;
+            // Track up to MAX_TRACKED_CHARS characters from this input
+            const charsToTrack = Math.min(change.text.length, MAX_TRACKED_CHARS);
+            
+            if (!state.pendingChars) {
+                state.pendingChars = [];
             }
+            state.pendingChars.push({
+                count: charsToTrack,
+                timestamp: Date.now()
+            });
+            trackedCharCount += charsToTrack;
         } else if (change.text.length === 0 && change.rangeLength > 0) {
             // --- This is a DELETION ---
             let charsToDelete = change.rangeLength;
@@ -368,12 +394,23 @@ function handleTextChange(event, context) {
                     break;
                 }
             }
+        } else if (change.text.length > 0 && change.rangeLength > 0) {
+            // --- This is a REPLACEMENT ---
+            // For replacements, we track the net addition (if any)
+            const netAddition = change.text.length - change.rangeLength;
+            if (netAddition > 0) {
+                const charsToTrack = Math.min(netAddition, MAX_TRACKED_CHARS);
+                
+                if (!state.pendingChars) {
+                    state.pendingChars = [];
+                }
+                state.pendingChars.push({
+                    count: charsToTrack,
+                    timestamp: Date.now()
+                });
+                trackedCharCount += charsToTrack;
+            }
         }
-    }
-
-    // If we detected a paste, show a subtle message in the status bar.
-    if (wasPasteDetected) {
-        vscode.window.setStatusBarMessage('Pasted content not counted.', 3000);
     }
 
     // Save state and update UI

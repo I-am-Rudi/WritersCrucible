@@ -2,7 +2,7 @@
   "name": "writers-crucible",
   "displayName": "Writer's Crucible",
   "description": "Tracks daily writing challenges with stats, visualizations, and goal notifications. Ignores pasted text.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "I-am-Rudi",
   "repository": {
   "type": "git",
