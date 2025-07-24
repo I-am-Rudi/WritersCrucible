@@ -5,7 +5,7 @@ writers maintain momentum by tracking daily writing challenges directly within
 the editor. It's built on the principle that consistent, measurable progress is
 the key to completing large writing projects.
 
-Check the extenson's marketplace page :
+Check the extension's marketplace page :
 [Writer's Crucible on Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=I-am-Rudi.writers-crucible)
 
 This extension lives in your status bar, providing at-a-glance feedback on your progress without interrupting your workflow.
