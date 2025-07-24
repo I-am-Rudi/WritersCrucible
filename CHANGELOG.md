@@ -6,13 +6,8 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 ## [Unreleased]
 
 ### Added
-- **GitHub Copilot Integration**: Full support for tracking AI-assisted writing
-  - Inline completion tracking (grayed-out suggestions accepted with Tab)
-  - Dropdown completion tracking (completion menu items accepted with Tab/Enter)
-  - Intelligent detection distinguishes between manual typing and AI assistance
-  - Both completion types now count towards daily character goals
 - **Configurable Character Limit**: New `maxTrackedChars` setting
-  - Set maximum characters tracked per input operation (default: 50, range: 1-1000)
+  - Set maximum characters tracked per input operation (default: 50)
   - Prevents large paste operations from inflating counts
   - Allows customization based on writing style and AI usage preferences
   - Accessible via VS Code settings under "Writer's Crucible"

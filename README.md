@@ -1,14 +1,23 @@
 # Writer's Crucible 
 
-**Writer's Crucible** is a Visual Studio Code extension designed to help writers maintain momentum by tracking daily writing challenges directly within the editor. It's built on the principle that consistent, measurable progress is the key to completing large writing projects.
+**Writer's Crucible** is a Visual Studio Code extension designed to help
+writers maintain momentum by tracking daily writing challenges directly within
+the editor. It's built on the principle that consistent, measurable progress is
+the key to completing large writing projects.
+
+Check the extenson's marketplace page :
+[Writer's Crucible on Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=I-am-Rudi.writers-crucible)
 
 This extension lives in your status bar, providing at-a-glance feedback on your progress without interrupting your workflow.
 
 ## Main Features
 
-* **GitHub Copilot Integration:** The extension now tracks both inline and dropdown GitHub Copilot completions, ensuring all your AI-assisted writing counts towards your daily goal.
-* **Smart Paste Detection:** The extension automatically detects text pasted up
-  to 100 character, ensuring that your typed characters count higher towards your daily goal.
+* **Instantaneous Input Detection:** The extension automatically
+  detects instantaneous character input, Auto Complete, Copilot suggestions and
+  pastes. They are counted up to a specified number character, ensuring that
+  your typed characters count higher towards your daily goal. You can configure
+  the maximum number of characters tracked per input operation (default: 50)
+  set to zero to exclude instantaneous input from your daily goal.
 * **Reset Today's Count:** Added a command to reset only the current day's progress to zero, perfect for fixing copy-paste errors without affecting your history.
 * **Graphical Statistics:** A new command opens a dedicated panel to visualize your writing progress with beautiful charts, showing daily output and cumulative growth over time.
 * **Per-Project Tracking:** The extension automatically tracks your progress separately for each project folder (workspace).
