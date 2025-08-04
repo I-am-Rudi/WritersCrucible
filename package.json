@@ -2,7 +2,7 @@
   "name": "writers-crucible",
   "displayName": "Writer's Crucible",
   "description": "Tracks daily writing challenges with stats, visualizations, and goal notifications. Ignores pasted text.",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "publisher": "I-am-Rudi",
   "repository": {
   "type": "git",
@@ -44,6 +44,18 @@
       {
         "command": "writers-crucible.addCitation",
         "title": "Writer's Crucible: Add a Citation"
+      },
+      {
+        "command": "writers-crucible.addFigure",
+        "title": "Writer's Crucible: Add a Figure"
+      },
+      {
+        "command": "writers-crucible.createNewFigure",
+        "title": "Writer's Crucible: Create New Figure"
+      },
+      {
+        "command": "writers-crucible.addExternalText",
+        "title": "Writer's Crucible: Add External Text"
       },
       {
         "command": "writers-crucible.resetChallenge",

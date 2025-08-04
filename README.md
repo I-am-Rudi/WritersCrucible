@@ -85,6 +85,21 @@ Each challenge level is designed for a specific workload and goal. Find the one 
 * **What it does:** This command adds **50 characters** to your daily goal each time you run it.
 * **Why it exists:** Creating and formatting citations, references, and bibliographies is a time-consuming but necessary part of non-fiction and academic writing. This work produces very few characters relative to the effort involved. This command allows you to acknowledge the effort of accurately citing a source, ensuring that this critical but low-character task contributes to your daily progress.
 
+##### `writers-crucible.addFigure`
+
+* **What it does:** Adds **50 characters** to your daily goal for adding an existing figure, chart, or visual element to your document.
+* **Why it exists:** Inserting figures, charts, diagrams, and other visual elements requires effort in selection, positioning, and captioning. This command acknowledges the time spent enhancing your document with visual content.
+
+##### `writers-crucible.createNewFigure`
+
+* **What it does:** Adds **200 characters** to your daily goal for creating a brand new figure, chart, or diagram.
+* **Why it exists:** Creating original visuals (graphs, charts, diagrams, illustrations) is time-intensive work that contributes significantly to your manuscript but produces minimal character count. This substantial bonus reflects the creative and analytical effort involved in developing new visual content.
+
+##### `writers-crucible.addExternalText`
+
+* **What it does:** Allows you to paste or enter text from external sources, automatically inserting it at your cursor position while counting all characters toward your daily goal.
+* **Why it exists:** When incorporating research notes, quotes, or content from other editors, you deserve full credit for the integration work. This command inserts the text directly into your document and properly accounts for all characters without double-counting limitations.
+
 
 
 ---
@@ -100,6 +115,10 @@ Each challenge level is designed for a specific workload and goal. Find the one 
   - All other text insertions
 * **Intelligent Input Detection:** Distinguishes between different types of text input and applies appropriate tracking rules.
 * **Daily Reset:** Your progress automatically resets to zero each day, and the previous day's work is saved to your project's history.
+* **Enhanced Content Creation Commands:** 
+  - **Figure Management:** Add points for inserting existing figures (50 chars) or creating new ones (200 chars)
+  - **External Text Integration:** Import and insert text from other sources with full character credit
+  - **Academic Writing Support:** Bonus points for citations and revision work
 * **Crucible-Specific Commands:** For the "3K Crucible" challenge, add character bonuses for revision and citation work.
 * **Persistent, Scoped State:** Your challenge and progress are saved independently for each project.
 

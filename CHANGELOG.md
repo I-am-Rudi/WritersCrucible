@@ -6,6 +6,15 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 ## [Unreleased]
 
 ### Added
+- **New Figure and Visual Commands**: Added figure/visual creation tracking
+  - `addFigure` command: Awards 50 characters for adding an existing figure to your document
+  - `createNewFigure` command: Awards 200 characters for creating a brand new figure
+  - Both commands are available for all challenge levels
+- **Enhanced External Text Import**: The `addExternalText` command now:
+  - Inserts the text directly at cursor position in the active editor
+  - Counts all characters from external sources (full credit for imported text)
+  - Prevents double-counting by accounting for automatic tracking limits
+  - Requires an active text editor to be open
 - **Configurable Character Limit**: New `maxTrackedChars` setting
   - Set maximum characters tracked per input operation (default: 50)
   - Prevents large paste operations from inflating counts
@@ -17,6 +26,10 @@ All notable changes to the Writer's Crucible extension will be documented in thi
 - Input validation for correction command
 - Custom challenge option - users can set their own daily character goals
 - Enhanced validation for custom goals (1-50,000 characters)
+
+### Removed
+- **Diagram Command**: Removed the `addDiagram` command to streamline available options
+  - Use `addFigure` command instead for similar functionality
 
 ### Changed
 - **Universal Character Tracking**: Complete rewrite of input detection system

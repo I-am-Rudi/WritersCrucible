@@ -45,6 +45,9 @@ function registerCommands(context) {
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.resetTodaysCount', () => resetTodaysCountCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.addRevisionTime', () => addRevisionTimeCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.addCitation', () => addCitationCommand(context)));
+    context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.addFigure', () => addFigureCommand(context)));
+    context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.createNewFigure', () => createNewFigureCommand(context)));
+    context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.addExternalText', () => addExternalTextCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.resetChallenge', () => resetChallenge(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.pauseTracking', () => pauseTrackingCommand(context)));
     context.subscriptions.push(vscode.commands.registerCommand('writers-crucible.correctCount', () => correctCountCommand(context)));
@@ -261,6 +264,61 @@ async function addCitationCommand(context) {
     if (confirm === 'Yes') {
         updateDailyCount(50, context);
         vscode.window.showInformationMessage('50 characters added for a citation.');
+    }
+}
+
+async function addFigureCommand(context) {
+    const confirm = await vscode.window.showQuickPick(['Yes', 'No'], { placeHolder: 'Add 50 characters for adding a figure?' });
+    if (confirm === 'Yes') {
+        updateDailyCount(50, context);
+        vscode.window.showInformationMessage('50 characters added for adding a figure.');
+    }
+}
+
+async function createNewFigureCommand(context) {
+    const confirm = await vscode.window.showQuickPick(['Yes', 'No'], { placeHolder: 'Add 200 characters for making a new figure?' });
+    if (confirm === 'Yes') {
+        updateDailyCount(200, context);
+        vscode.window.showInformationMessage('200 characters added for creating a new figure.');
+    }
+}
+
+async function addExternalTextCommand(context) {
+    // Check if there's an active text editor
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showWarningMessage('Please open a text file to insert external text.');
+        return;
+    }
+
+    const text = await vscode.window.showInputBox({
+        prompt: 'Paste or enter text from another editor to count all characters and insert at cursor',
+        placeHolder: 'Enter the text here...',
+        validateInput: (value) => {
+            if (!value || value.trim().length === 0) {
+                return 'Please enter some text to count';
+            }
+            return null;
+        }
+    });
+    
+    if (text !== undefined) {
+        const charCount = text.length;
+        
+        // Insert the text at the current cursor position
+        await editor.edit(editBuilder => {
+            editBuilder.insert(editor.selection.active, text);
+        });
+        
+        // Calculate the additional characters to add manually
+        // The automatic tracking will handle up to 50 characters, so we only need to add the excess
+        const additionalChars = charCount > 50 ? charCount - 50 : 0;
+        
+        if (additionalChars > 0) {
+            updateDailyCount(additionalChars, context);
+        }
+        
+        vscode.window.showInformationMessage(`${charCount.toLocaleString()} characters added and inserted from external text.`);
     }
 }
 
